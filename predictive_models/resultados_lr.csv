@@ -1,0 +1,2 @@
+modelo;roc_auc;f1;accuracy;roc_auc_cv;best_params
+LogisticRegression;0.7446289054550842;0.7399938893981057;0.6893593721482022;0.7794878194603052;{'C': 100, 'solver': 'liblinear'}
