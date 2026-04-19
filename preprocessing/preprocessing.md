@@ -8,126 +8,60 @@ O processo envolveu limpeza, transformação de variáveis e criação de novas 
 
 ## 🔹 Tratamento dos Dados
 
-Inicialmente, foram realizadas as seguintes etapas:
+A preparação inicial dos dados foi realizada utilizando a biblioteca **Polars** para garantir alta performance no processamento de grandes volumes:
 
-- Leitura da base utilizando **Pandas**
-- Tratamento de valores ausentes
-- Conversão de tipos de dados quando necessário
-- Remoção de variáveis consideradas irrelevantes ou redundantes
+- Tratamento de valores ausentes.
+- Conversão de tipos de dados.
+- Filtragem de variáveis irrelevantes ou redundantes.
+- Engenharia de atributos inicial.
 
 ---
 
 ## 🔹 Engenharia de Atributos (Feature Engineering)
 
-Foram criadas novas variáveis com o objetivo de enriquecer a representação dos dados e capturar padrões relevantes para a predição:
+Foram criadas novas variáveis com o objetivo de enriquecer a representação dos dados:
 
-- **Indicadores binários de texto** na variável _submodalidade_, como:
-  - presença de termos como "crédito", "cartão", entre outros
-- **Frequência da submodalidade**, representando o número de ocorrências de cada categoria
-- Outras transformações derivadas com base no conhecimento do domínio
-
-Essas variáveis permitem transformar informações categóricas e textuais em sinais numéricos mais úteis para os modelos de machine learning.
+- **Indicadores binários de texto** na variável _submodalidade_ (ex: presença de termos específicos).
+- **Frequência da submodalidade**, transformando a variável categórica em um sinal numérico de popularidade.
+- **Redução de Cardinalidade**: Agrupamento de categorias raras em "Outros" com base em um threshold de 1000 ocorrências (veja [Noise Analysis](../tests/noise_analysis.md)).
 
 ---
 
-## 🔹 Criação de Diferentes Cenários de Dataset
+## 🔹 Cenários de Modelagem
 
-Para avaliar o impacto da variável _submodalidade_ e das estratégias de engenharia de atributos, foram construídos três conjuntos de dados distintos:
+Para avaliar o impacto das features, os modelos são testados em três cenários:
 
-- **sem_submodalidade**  
-  A variável _submodalidade_ foi completamente removida
-
-- **submodalidade_agrupada**  
-  As categorias da variável foram agrupadas com base em frequência (threshold), reduzindo cardinalidade
-
-- **submodalidade_engineered**  
-  A variável original foi mantida e enriquecida com novas features derivadas
+1. **sem_submodalidade**: Variável removida.
+2. **submodalidade_agrupada**: Categorias raras agrupadas.
+3. **submodalidade_engineered**: Variável original + features derivadas.
 
 ---
 
-## 🔹 Por que criar múltiplos datasets?
+## 🔹 Pipeline de Machine Learning
 
-A criação desses cenários permite analisar como diferentes formas de representar a mesma informação impactam o desempenho do modelo.
-
-Especificamente, foi possível avaliar:
-
-- Se a variável _submodalidade_ realmente agrega valor preditivo
-- Se o agrupamento reduz ruído ou perda de informação
-- Se a engenharia de atributos melhora a capacidade de generalização
-
-Essa abordagem experimental torna a análise mais robusta e fundamentada.
+O projeto adota uma abordagem de **Pipeline Robusta** utilizando `imblearn.pipeline.Pipeline`, garantindo que:
+- O **Scaling** (`StandardScaler`) seja calculado apenas no treino.
+- O **SMOTE** (oversampling) seja aplicado estritamente dentro das dobras de validação cruzada para evitar vazamento de dados (*data leakage*).
 
 ---
 
-## 🔹 Estratégias adicionais
+## 🔹 Otimização e Registro de Resultados
 
-Além dos cenários acima, também foram avaliadas variações com:
+Para cada modelo (XGBoost, KNN, RandomForest, SVM, LogisticRegression, DecisionTree), realizamos:
 
-- Aplicação de **SMOTE**, para balanceamento das classes
-- Diferentes combinações de features
+- **Grid Search CV**: Busca exaustiva pelos melhores hiperparâmetros.
+- **Avaliação de SMOTE como Hiperparâmetro**: O grid search testa tanto a presença quanto a ausência do SMOTE.
+- **Log Duplo**: O sistema registra automaticamente os melhores resultados para o cenário **Com SMOTE** e **Sem SMOTE**, permitindo identificar qual técnica de balanceamento foi mais eficaz para cada algoritmo.
 
----
-
-## 🔹 Divisão dos Dados
-
-Para todos os cenários, os dados foram divididos em:
-
-- **Treino**: utilizado para ajuste dos modelos
-- **Teste**: utilizado para avaliação final de desempenho
-
-A divisão foi mantida consistente entre os cenários para garantir comparabilidade justa entre os resultados.
+As métricas registradas em `results/model_results.csv` são:
+- **ROC AUC** (Principal métrica de comparação)
+- **F1-score**
+- **Accuracy**
 
 ---
 
-## 🔹 Avaliação Inicial (Baseline)
+## 🔹 Conclusões Preliminares
 
-Antes da otimização, foi realizado um treinamento inicial (baseline) utilizando em todos os modelos, em cada um dos três cenários.
-
-O objetivo dessa etapa foi:
-
-- Comparar rapidamente o desempenho entre os datasets
-- Identificar qual estratégia de pré-processamento apresenta melhores resultados
-- Evitar custo computacional desnecessário com otimização em cenários inferiores
-
-As métricas utilizadas foram:
-
-- ROC AUC
-- F1-score
-- Accuracy
-
----
-
-## 🔹 Análise dos Resultados
-
-Os resultados indicaram que:
-
-- O desempenho do modelo se manteve **consistente entre os cenários**
-- A engenharia de atributos conseguiu capturar a maior parte da informação da variável _submodalidade_
-- A aplicação de **SMOTE não trouxe ganhos significativos**, podendo inclusive reduzir levemente o desempenho
-
-Dessa forma, optou-se por utilizar o cenário:
-
-**sem_submodalidade (sem SMOTE)**
-
-Essa escolha foi baseada em:
-
-- menor complexidade do modelo
-- menor risco de overfitting
-- desempenho equivalente aos demais cenários
-
----
-
-## 🔹 Otimização de Hiperparâmetros (Grid Search)
-
-Após a definição do melhor cenário, foi realizada a otimização dos hiperparâmetros do modelo **XGBoost** utilizando Grid Search.
-
-O objetivo dessa etapa foi refinar o desempenho do modelo por meio do ajuste de parâmetros como:
-
-- número de estimadores (`n_estimators`)
-- profundidade das árvores (`max_depth`)
-- taxa de aprendizado (`learning_rate`)
-- entre outros
-
-Essa otimização foi aplicada apenas no melhor cenário identificado na etapa anterior, garantindo eficiência computacional e foco na melhor configuração de dados.
+Até o momento, observou-se que a engenharia de atributos e a redução de cardinalidade conseguem preservar a maior parte da informação relevante sem a necessidade de manter centenas de colunas esparsas. A escolha do cenário final depende do equilíbrio entre interpretabilidade e performance de cada modelo.
 
 ---

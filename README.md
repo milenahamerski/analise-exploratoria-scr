@@ -1,50 +1,58 @@
-# Análise de Base SCR com Polars
+# Análise de Base SCR com Polars e Machine Learning
 
-Este projeto tem como objetivo realizar a análise de dados a partir de bases do [**SCR**](bcb.gov.br/estabilidadefinanceira/scrdata), utilizando **Python** e a biblioteca **Polars**.
+Este projeto tem como objetivo realizar a análise de dados a partir de bases do [**SCR**](bcb.gov.br/estabilidadefinanceira/scrdata), utilizando **Python**, **Polars** e bibliotecas de **Machine Learning** para predição de inadimplência.
 
-## Download das bases de dados
+## 📂 Estrutura do Projeto
 
-1. Acesse o link do [Google Drive](https://drive.google.com/drive/folders/1RKWM44RwyKJUUb-aR2h2N5Qfx_S6PMfV?usp=sharing) com as bases do SCR. No Drive, também é possível encontrar um PDF com a descrição de todos os parâmetros disponíveis na base de dados, além das análises referentes aos meses 02/25, 05/25 e 09/25.
-2. Escolha qualquer arquivo CSV disponível.
-3. Faça o download do arquivo para a mesma pasta onde está o código Python (ou ajuste o caminho no código, se necessário).
-
-## Como usar uma base específica no código
-
-Após baixar o arquivo desejado, basta alterar o nome do CSV na linha abaixo do código:
-
-```python
-df = pl.read_csv("scrdata_.csv", separator=";")
+```text
+.
+├── exploratory_analysis/    # Notebooks de análise exploratória inicial
+├── predictive_models/       # Notebooks individuais para cada algoritmo de ML
+│   ├── logistic_regression.ipynb
+│   ├── decision_tree.ipynb
+│   ├── knn.ipynb
+│   ├── random_forest.ipynb
+│   ├── svm.ipynb
+│   └── xgboost.ipynb
+├── preprocessing/           # Lógica de tratamento e engenharia de atributos
+├── results/                 # Arquivos de log (.csv) e notebook de comparação final
+├── tests/                   # Análises de ruído e testes de consistência
+└── utils/                   # Utilitários (logger, plotters, etc.)
 ```
 
-## Pré-processamento dos dados
+## 🚀 Como Iniciar
 
-Para entender todas as etapas de tratamento e preparação dos dados, acesse:
+### 1. Download das bases de dados
+1. Acesse o link do [Google Drive](https://drive.google.com/drive/folders/1RKWM44RwyKJUUb-aR2h2N5Qfx_S6PMfV?usp=sharing) com as bases do SCR.
+2. Faça o download de um arquivo CSV para a pasta raiz do projeto.
 
-[Preprocessing](preprocessing/preprocessing.md)
+### 2. Configuração do Ambiente
+Certifique-se de ter as dependências instaladas (recomenda-se o uso de um virtual environment):
+```bash
+pip install pandas polars scikit-learn imbalanced-learn xgboost matplotlib seaborn
+```
 
-## Análise da Variável Submodalidade
+## 🧠 Modelagem e Experimentos
 
-Foi realizada uma análise exploratória da variável **submodalidade** para identificar problemas de alta cardinalidade e categorias raras.
+O projeto utiliza uma abordagem de pipeline robusta (`imblearn.pipeline`) que integra:
+- **Pré-processamento**: Tratamento de nulos e engenharia de atributos.
+- **SMOTE**: Balanceamento de classes aplicado apenas dentro das dobras da validação cruzada.
+- **GridSearchCV**: Otimização de hiperparâmetros para todos os modelos.
 
-A variável apresentou comportamento de **long tail**, com muitas categorias pouco representativas, o que poderia impactar negativamente os modelos.
+### Modelos Implementados
+- Logistic Regression
+- Decision Tree
+- K-Nearest Neighbors (KNN)
+- Random Forest
+- Support Vector Machine (SVM)
+- XGBoost
 
-Para resolver isso, foi aplicada uma estratégia de **redução de cardinalidade baseada em frequência**, agrupando categorias raras em "Outros".
+## 📊 Registro de Resultados
 
-Veja a análise completa:  
-[Documentação de Noise Analysis](tests/noise_analysis.md)
+Todos os experimentos salvam automaticamente as métricas em `results/model_results.csv`. 
+A nova lógica de log captura os melhores parâmetros para os cenários **com SMOTE** e **sem SMOTE** simultaneamente, permitindo uma comparação justa.
 
-## Resultados
-
-Os resultados obtidos a partir dos experimentos com os modelos de Machine Learning estão documentados em formato de notebook interativo.
-
-Nele estão incluídos:
-
-- Comparação entre diferentes modelos (XGBoost, KNN, Random Forest, SVM, etc.)
-- Avaliação de desempenho utilizando métricas como ROC-AUC, F1-score e Accuracy
-- Análise comparativa entre cenários com e sem SMOTE
-- Impacto da engenharia de variáveis na performance dos modelos
-- Resultados de GridSearchCV (tuning de hiperparâmetros)
-- Visualizações gráficas (heatmaps e rankings)
-
-Acesse os resultados completos aqui:  
-[Notebook de Resultados](results/results.ipynb)
+Para ver a análise consolidada:
+- [Notebook de Resultados](results/results.ipynb)
+- [Documentação de Pré-processamento](preprocessing/preprocessing.md)
+- [Análise de Ruído (Submodalidade)](tests/noise_analysis.md)
