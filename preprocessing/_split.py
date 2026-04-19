@@ -1,8 +1,7 @@
 from sklearn.model_selection import train_test_split
-from imblearn.over_sampling import SMOTE
 import pandas as pd
 
-def split_data(df, use_smote=True):
+def split_data(df, use_smote=False):
 
     X = df.drop(["carteira_vencida", "cliente"], axis=1)
     y = df["carteira_vencida"]
@@ -17,8 +16,8 @@ def split_data(df, use_smote=True):
         stratify=y
     )
 
-    if use_smote:
-        smote = SMOTE(random_state=42)
-        X_train, y_train = smote.fit_resample(X_train, y_train)
+    # Nota: O SMOTE foi removido daqui para evitar vazamento de dados (data leakage)
+    # durante a validação cruzada. Agora o SMOTE deve ser aplicado via Pipeline
+    # nos notebooks de modelagem.
 
     return X_train, X_test, y_train, y_test
