@@ -15,7 +15,9 @@ Este projeto tem como objetivo realizar a análise de dados a partir de bases do
 │   ├── svm.ipynb
 │   └── xgboost.ipynb
 ├── preprocessing/           # Lógica de tratamento e engenharia de atributos
-├── results/                 # Arquivos de log (.csv) e notebook de comparação final
+├── results/                 # Logs e Análise de Desempenho
+│   ├── results.ipynb          # Resultados históricos (até 19/04)
+│   └── results_2.ipynb        # Resultados recentes (desde 19/04)
 ├── tests/                   # Análises de ruído e testes de consistência
 └── utils/                   # Utilitários (logger, plotters, etc.)
 ```
@@ -53,6 +55,17 @@ Todos os experimentos salvam automaticamente as métricas em `results/model_resu
 A nova lógica de log captura os melhores parâmetros para os cenários **com SMOTE** e **sem SMOTE** simultaneamente, permitindo uma comparação justa.
 
 Para ver a análise consolidada:
-- [Notebook de Resultados](results/results.ipynb)
+- [Relatório de Performance](results/relatorio_performance.md) 🚀
+- [Resultados Históricos (até 19/04)](results/results.ipynb)
+- [Resultados Recentes (desde 19/04)](results/results_2.ipynb)
 - [Documentação de Pré-processamento](preprocessing/preprocessing.md)
 - [Análise de Ruído (Submodalidade)](tests/noise_analysis.md)
+
+## 🔄 Fluxo de Execução Recomendado
+
+Para reproduzir os resultados ou testar novos modelos:
+1. **Limpeza e Pré-processamento**: Rode o script em `preprocessing/main_preprocessing.py` para gerar a base tratada.
+2. **Treinamento Baseline**: Execute os notebooks em `predictive_models/` para ter uma visão inicial.
+3. **Otimização (GridSearch)**: Utilize a seção de GridSearch nos mesmos notebooks para encontrar os melhores hiperparâmetros.
+4. **Análise Final**: Confira o `results/results.ipynb` ou o `relatorio_performance.md` para comparar os modelos.
+
