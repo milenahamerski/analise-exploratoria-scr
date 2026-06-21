@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Previsor de Inadimplência</title>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-brand">BankAlert Pro</div>
+        <div class="nav-links">
+            <a href="/" class="active">Simulador de Atualização</a>
+            <a href="/dashboard">Central de Alertas</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <header>
+            <div class="logo-area">
+                <div class="icon"></div>
+                <h1>Simulador de Risco - Atualização Cadastral</h1>
+            </div>
+            <p>Insira os dados atualizados do associado para calcular a probabilidade de inadimplência pós-concessão. Utilize esta ferramenta durante contatos de renegociação ou monitoramento preventivo.</p>
+        </header>
+
+        <form id="prediction-form">
+            <section class="form-section">
+                <h2>Dados Cadastrais</h2>
+                <div class="grid">
+                    <div class="input-group">
+                        <label for="uf">Estado (UF)</label>
+                        <select id="uf" name="uf" required>
+                            <option value="SP">São Paulo</option>
+                            <option value="RJ">Rio de Janeiro</option>
+                            <option value="MG">Minas Gerais</option>
+                            <option value="PR">Paraná</option>
+                            <option value="SC">Santa Catarina</option>
+                            <option value="RS">Rio Grande do Sul</option>
+                            <!-- add more options if needed or just leave some defaults for simplicity -->
+                            <option value="AC">Acre</option>
+                            <option value="Outros">Outros</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="porte">Porte (Renda Estimada)</label>
+                        <select id="porte" name="porte" required>
+                            <option value="Até 1 salário mínimo">Até 1 salário mínimo</option>
+                            <option value="Mais de 1 a 2 salários mínimos">Mais de 1 a 2 salários mínimos</option>
+                            <option value="Mais de 2 a 3 salários mínimos">Mais de 2 a 3 salários mínimos</option>
+                            <option value="Mais de 3 a 5 salários mínimos">Mais de 3 a 5 salários mínimos</option>
+                            <option value="Mais de 5 a 10 salários mínimos">Mais de 5 a 10 salários mínimos</option>
+                            <option value="Mais de 10 a 20 salários mínimos">Mais de 10 a 20 salários mínimos</option>
+                            <option value="Sem rendimento">Sem rendimento</option>
+                            <option value="Indisponível">Indisponível</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="cnae_ocupacao">CNAE / Ocupação</label>
+                        <select id="cnae_ocupacao" name="cnae_ocupacao" required>
+                            <option value="Autônomo">Autônomo</option>
+                            <option value="Empregado de empresa privada">Empregado de empresa privada</option>
+                            <option value="Servidor ou empregado público">Servidor ou empregado público</option>
+                            <option value="Empresário">Empresário</option>
+                            <option value="MEI">MEI</option>
+                            <option value="Outros">Outros</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+
+            <section class="form-section">
+                <h2>Dados Operacionais</h2>
+                <div class="grid">
+                    <div class="input-group">
+                        <label for="modalidade">Modalidade</label>
+                        <select id="modalidade" name="modalidade" required>
+                            <option value="Empréstimos">Empréstimos</option>
+                            <option value="Financiamentos">Financiamentos</option>
+                            <option value="Financiamentos imobiliários">Financiamentos imobiliários</option>
+                            <option value="Operações de arrendamento">Operações de arrendamento</option>
+                            <option value="Outros créditos">Outros créditos</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="submodalidade">Submodalidade</label>
+                        <select id="submodalidade" name="submodalidade" required>
+                            <option value="Crédito pessoal - com consignação em folha de pagam.">Crédito Pessoal - Consignado</option>
+                            <option value="Crédito pessoal - sem consignação em folha de pagam.">Crédito Pessoal - Sem Consignação</option>
+                            <option value="Cartão de crédito - compra, fatura parcelada ou saque financiado pela instituição financeira emitente do cartão">Cartão de Crédito</option>
+                            <option value="Cheque especial">Cheque especial</option>
+                            <option value="Financiamento habitacional - SFH">Financiamento habitacional - SFH</option>
+                            <option value="Aquisição de bens - veículos automotores">Aquisição de bens - veículos automotores</option>
+                            <option value="Outros">Outros</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="numero_de_operacoes">Número de Operações</label>
+                        <input type="number" id="numero_de_operacoes" name="numero_de_operacoes" placeholder="Ex: 5" required>
+                    </div>
+                </div>
+            </section>
+
+            <section class="form-section">
+                <h2>Valores Financeiros (R$)</h2>
+                <div class="grid">
+                    <div class="input-group">
+                        <label for="carteira_a_vencer">Carteira A Vencer Total</label>
+                        <input type="number" step="0.01" id="carteira_a_vencer" name="carteira_a_vencer" placeholder="Ex: 10000.00" required>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="a_vencer_ate_90_dias">A Vencer Até 90 Dias</label>
+                        <input type="number" step="0.01" id="a_vencer_ate_90_dias" name="a_vencer_ate_90_dias" placeholder="0.00" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="a_vencer_de_91_ate_360_dias">A Vencer (91 a 360 Dias)</label>
+                        <input type="number" step="0.01" id="a_vencer_de_91_ate_360_dias" name="a_vencer_de_91_ate_360_dias" placeholder="0.00" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="a_vencer_de_361_ate_1080_dias">A Vencer (361 a 1080 Dias)</label>
+                        <input type="number" step="0.01" id="a_vencer_de_361_ate_1080_dias" name="a_vencer_de_361_ate_1080_dias" placeholder="0.00" required>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="a_vencer_de_1081_ate_1800_dias">A Vencer (1081 a 1800 Dias)</label>
+                        <input type="number" step="0.01" id="a_vencer_de_1081_ate_1800_dias" name="a_vencer_de_1081_ate_1800_dias" placeholder="0.00" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="a_vencer_acima_de_5400_dias">A Vencer (> 5400 Dias)</label>
+                        <input type="number" step="0.01" id="a_vencer_acima_de_5400_dias" name="a_vencer_acima_de_5400_dias" placeholder="0.00" required>
+                    </div>
+                </div>
+            </section>
+
+            <button type="submit" class="primary-btn">
+                <span>Calcular Risco de Inadimplência</span>
+                <div class="spinner" id="btn-spinner"></div>
+            </button>
+        </form>
+
+        <div id="result-card" class="result-card hidden">
+            <div class="result-header">
+                <h2>Probabilidade de Inadimplência</h2>
+            </div>
+            <div class="result-body">
+                <div class="percentage-circle" id="percentage-circle">
+                    <span id="percentage-value">0%</span>
+                </div>
+                <p id="result-message">Analisando...</p>
+            </div>
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', path='script.js') }}"></script>
+</body>
+</html>
