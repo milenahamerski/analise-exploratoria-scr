@@ -1,67 +1,78 @@
-## Pré-processamento e Estratégias de Modelagem
+# Pré-processamento e Estratégias de Modelagem
 
-Nesta etapa, foi realizado o pré-processamento da base de dados do SCR com o objetivo de preparar os dados para modelagem preditiva de inadimplência.
+Este documento descreve detalhadamente o fluxo de pré-processamento aplicado à base de dados do SCR (Sistema de Informações de Crédito), a criação de cenários de *features*, e as estratégias de validação e otimização de modelos.
 
-O processo envolveu limpeza, transformação de variáveis e criação de novas features, além da definição de diferentes cenários experimentais para avaliar o impacto dessas decisões no desempenho dos modelos.
-
----
-
-## 🔹 Tratamento dos Dados
-
-A preparação inicial dos dados foi realizada utilizando a biblioteca **Polars** para garantir alta performance no processamento de grandes volumes:
-
-- Tratamento de valores ausentes.
-- Conversão de tipos de dados.
-- Filtragem de variáveis irrelevantes ou redundantes.
-- Engenharia de atributos inicial.
+O ponto de entrada do pipeline de dados é a função `load_and_preprocess` em `main_preprocessing.py`.
 
 ---
 
-## 🔹 Engenharia de Atributos (Feature Engineering)
-
-Foram criadas novas variáveis com o objetivo de enriquecer a representação dos dados:
-
-- **Indicadores binários de texto** na variável _submodalidade_ (ex: presença de termos específicos).
-- **Frequência da submodalidade**, transformando a variável categórica em um sinal numérico de popularidade.
-- **Redução de Cardinalidade**: Agrupamento de categorias raras em "Outros" com base em um threshold de 1000 ocorrências (veja [Noise Analysis](../tests/noise_analysis.md)).
+## Passo 1: Carregamento dos Dados (`_load_data.py`)
+Os dados originais em formato CSV são importados utilizando a biblioteca **Pandas**. Como o delimitador do CSV é o ponto e vírgula (`;`), a função garante a leitura correta e seleciona as colunas de interesse para o projeto.
 
 ---
 
-## 🔹 Cenários de Modelagem
+## Passo 2: Limpeza e Saneamento (`_cleaning.py`)
+Nesta etapa, os dados são padronizados e os problemas mais comuns do dataset são corrigidos:
 
-Para avaliar o impacto das features, os modelos são testados em três cenários:
-
-1. **sem_submodalidade**: Variável removida.
-2. **submodalidade_agrupada**: Categorias raras agrupadas.
-3. **submodalidade_engineered**: Variável original + features derivadas.
+1. **Filtro de Clientes:** Filtra o dataset para manter apenas registros onde `cliente == "PF"` (Pessoa Física).
+2. **Definição da Target (`carteira_vencida`):** 
+   - Converte os valores da coluna de string para float.
+   - Transforma a coluna em uma variável binária ($1$ para inadimplente se `carteira_vencida > 0`, $0$ para adimplente).
+3. **Tratamento de Nulos:**
+   - Preenche valores nulos da coluna `porte` com `"Indisponível"`.
+   - Preenche valores nulos de `submodalidade` com `"desconhecido"`.
+4. **Padronização Monetária:** As colunas financeiras são convertidas de string para float.
+5. **Correção Matemática:** Substitui valores $0$ por $1$ na `carteira_a_vencer` para evitar problemas de divisão por zero na criação de features.
+6. **Saneamento de `numero_de_operacoes`:**
+   - Identifica valores negativos de operações como dados faltantes e cria uma flag indicativa (`operacoes_missing = 1`).
+   - Imputa os valores ausentes com a mediana da distribuição.
 
 ---
 
-## 🔹 Pipeline de Machine Learning
+## Passo 3: Engenharia de Atributos (Feature Engineering)
+*(Realizado em módulos auxiliares como `_feature_engineering.py` quando aplicável)*
+
+Cria novas variáveis com o objetivo de enriquecer a representação dos dados:
+- **Razões de Vencimento:** Proporção do saldo a vencer em curto, médio e longo prazo em relação ao saldo total da carteira.
+- **Transformações Logarítmicas:** Aplicadas a saldos e número de operações para suavizar a assimetria na distribuição de valores.
+- **Indicadores Numéricos/Textuais:** Mapeamento de informações relevantes em variáveis binárias (flags) para os modelos.
+
+---
+
+## Passo 4: Criação dos 3 Cenários (Datasets) (`_scenarios.py`)
+Para testar a relevância da coluna `submodalidade` (que apresenta alta cardinalidade), os dados são divididos em 3 cenários experimentais distintos:
+
+### 1. Cenário: `sem_submodalidade`
+A coluna `submodalidade` é completamente descartada. Serve como *baseline* básico para avaliar se apenas dados de saldo e demográficos são suficientes.
+
+### 2. Cenário: `submodalidade_agrupada`
+Para reduzir o ruído gerado por categorias com baixíssima ocorrência:
+- Categorias com menos de **1000 ocorrências** são agrupadas sob o rótulo único de **"Outros"**.
+
+### 3. Cenário: `submodalidade_engineered`
+Aplica agrupamentos lógicos de negócio baseados em regras de texto para diminuir a cardinalidade para 10 grupos principais (ex: Cartão de Crédito, Crédito Pessoal, Financiamento Habitacional, etc.). Após este mapeamento, a coluna original é descartada.
+
+---
+
+## Passo 5: Codificação e Divisão dos Dados (`_split.py`)
+
+1. **One-Hot Encoding:** Converte todas as variáveis categóricas em binárias (*dummies*) numéricas (`drop_first=True`).
+2. **Divisão de Treino/Teste:** Divide os dados em **70% para treinamento** e **30% para teste**, estratificados com base na variável target (`carteira_vencida`).
+
+---
+
+## Pipeline de Machine Learning e Balanceamento (SMOTE)
 
 O projeto adota uma abordagem de **Pipeline Robusta** utilizando `imblearn.pipeline.Pipeline`, garantindo que:
 - O **Scaling** (`StandardScaler`) seja calculado apenas no treino.
-- O **SMOTE** (oversampling) seja aplicado estritamente dentro das dobras de validação cruzada para evitar vazamento de dados (*data leakage*).
+- **Nota Importante sobre SMOTE:** Para evitar o vazamento de dados (*data leakage*), o balanceamento de classes com **SMOTE não é aplicado no pré-processamento global**, sendo realizado estritamente dentro das dobras de validação cruzada.
 
 ---
 
-## 🔹 Otimização e Registro de Resultados
+## Otimização e Registro de Resultados
 
-Para cada modelo (XGBoost, KNN, RandomForest, SVM, LogisticRegression, DecisionTree), realizamos:
+Para cada algoritmo (XGBoost, KNN, RandomForest, SVM, LogisticRegression, DecisionTree), realiza-se:
 
 - **Grid Search CV**: Busca exaustiva pelos melhores hiperparâmetros.
-- **Avaliação de SMOTE como Hiperparâmetro**: O grid search testa tanto a presença quanto a ausência do SMOTE.
-- **Log Duplo**: O sistema registra automaticamente os melhores resultados para o cenário **Com SMOTE** e **Sem SMOTE**, permitindo identificar qual técnica de balanceamento foi mais eficaz para cada algoritmo.
-
-As métricas registradas em `results/model_results.csv` são:
-- **ROC AUC** (Principal métrica de comparação)
-- **F1-score**
-- **Accuracy**
-
----
-
-## 🔹 Conclusões Preliminares
-
-Até o momento, observou-se que a engenharia de atributos e a redução de cardinalidade conseguem preservar a maior parte da informação relevante sem a necessidade de manter centenas de colunas esparsas. A escolha do cenário final depende do equilíbrio entre interpretabilidade e performance de cada modelo.
-
----
+- **SMOTE como Hiperparâmetro**: O grid search testa o pipeline *com* e *sem* SMOTE.
+- **Log de Resultados**: O sistema registra os melhores desempenhos no arquivo `results/model_results.csv`, englobando as métricas de **ROC AUC** (principal), **F1-score** e **Accuracy**.
