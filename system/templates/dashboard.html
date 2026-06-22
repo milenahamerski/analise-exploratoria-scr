@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RiskAnalyzer - Painel de Saúde</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-brand">BankAlert Pro</div>
+        <div class="nav-links">
+            <a href="/">Simulador de Atualização</a>
+            <a href="/dashboard" class="active">Central de Alertas</a>
+        </div>
+    </nav>
+
+    <main class="container dashboard-container">
+        <header class="dashboard-header">
+            <h1>Monitoramento Pós-Concessão</h1>
+            <p>Acompanhe a probabilidade de inadimplência e atue na recuperação de crédito.</p>
+        </header>
+
+        <section class="summary-cards">
+            <div class="card card-blue">
+                <h3>Total de Associados</h3>
+                <div class="value">{{ total }}</div>
+            </div>
+            <div class="card card-green">
+                <h3>Baixo Risco</h3>
+                <div class="value">{{ baixos }}</div>
+            </div>
+            <div class="card card-yellow">
+                <h3>Médio Risco</h3>
+                <div class="value">{{ medios }}</div>
+            </div>
+            <div class="card card-red">
+                <h3>Alto Risco</h3>
+                <div class="value">{{ altos }}</div>
+            </div>
+        </section>
+
+        <section class="table-section">
+            <h2>Detalhamento da Carteira e Ações Sugeridas</h2>
+            <div class="table-responsive">
+                <table class="members-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Associado</th>
+                            <th>UF</th>
+                            <th>Ocupação</th>
+                            <th>A Vencer (R$)</th>
+                            <th>Risco (%)</th>
+                            <th>Status de Risco</th>
+                            <th>Ação Recomendada</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for member in members %}
+                        <tr>
+                            <td>#{{ member.id }}</td>
+                            <td>{{ member.nome }}</td>
+                            <td>{{ member.uf }}</td>
+                            <td>{{ member.cnae_ocupacao }}</td>
+                            <td>{{ "%.2f"|format(member.carteira_a_vencer) }}</td>
+                            <td>{{ member.risk_percent }}%</td>
+                            <td>
+                                {% if member.risk_status == 'Baixo' %}
+                                    <span class="badge badge-green">Baixo</span>
+                                {% elif member.risk_status == 'Médio' %}
+                                    <span class="badge badge-yellow">Médio</span>
+                                {% else %}
+                                    <span class="badge badge-red pulse">Alto</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if member.risk_status == 'Baixo' %}
+                                    <span class="action-text text-muted">Acompanhamento Padrão</span>
+                                {% elif member.risk_status == 'Médio' %}
+                                    <button class="action-btn btn-yellow">Aviso SMS / Monitorar</button>
+                                {% else %}
+                                    <button class="action-btn btn-red">Ligar Urgente / Renegociar</button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% if not members %}
+                        <tr>
+                            <td colspan="7" class="empty-state">Nenhum associado encontrado na base.</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+</body>
+</html>
